@@ -57,34 +57,34 @@ services:
       - PYTHONUNBUFFERED=1
 
   filesystem-service:
-    build:
-      context: ./filesystem
-      dockerfile: Dockerfile
+    build: ./filesystem
     ports:
       - "8005:8000"
     volumes:
-      - ./filesystem:/app
+      - ./filesystem/app:/app
     environment:
       - PYTHONUNBUFFERED=1
 
   deadlock-simulator-service:
-    build:
-      context: ./deadlock-simulator
-      dockerfile: Dockerfile
+    build: ./deadlock-simulator
     ports:
       - "8006:8000"
     volumes:
-      - ./deadlock-simulator:/app
+      - ./deadlock-simulator/app:/app
+    networks:
+      - virtual-labs-network
     environment:
       - PYTHONUNBUFFERED=1
 
   concurrency-simulator-service:
-    build:
-      context: ./concurrency-simulator
-      dockerfile: Dockerfile
+    build: ./concurrency-simulator
     ports:
       - "8007:8000"
     volumes:
-      - ./concurrency-simulator:/app
+      - ./concurrency-simulator/app:/app
     environment:
       - PYTHONUNBUFFERED=1 
+
+networks:
+  virtual-labs-network:
+    external: true

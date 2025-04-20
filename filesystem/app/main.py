@@ -153,6 +153,11 @@ class WriteRequest(BaseModel):
 class LockRequest(BaseModel):
     user_id: str
 
+
+@app.get("/")
+def root():
+    return {"message": "Hello from filesystem!"}
+
 # File endpoints
 @app.post("/files/")
 def create_file(req: FileRequest):
