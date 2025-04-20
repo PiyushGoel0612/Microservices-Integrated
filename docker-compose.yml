@@ -1,30 +1,90 @@
+version: '3.8'
+
 services:
-  filesystem:
-    build: ./filesystem
+  ipc-service:
+    build:
+      context: ./ipc
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./ipc:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  system-call-service:
+    build:
+      context: ./systemcall
+      dockerfile: Dockerfile
     ports:
       - "8001:8000"
     volumes:
-      - ./filesystem/app:/app
-    restart: unless-stopped
+      - ./systemcall:/app
+    environment:
+      - PYTHONUNBUFFERED=1
 
-  deadlock-simulator:
-    build: ./deadlock-simulator
+  memory-manager-service:
+    build:
+      context: ./memory_manager
+      dockerfile: Dockerfile
     ports:
       - "8002:8000"
     volumes:
-      - ./deadlock-simulator/app:/app
-    networks:
-      - virtual-labs-network
-    restart: unless-stopped
+      - ./memory_manager:/app
+    environment:
+      - PYTHONUNBUFFERED=1
 
-  concurrency-simulator:
-    build: ./concurrency-simulator
+  process-scheduler-service:
+    build:
+      context: ./process_scheduler
+      dockerfile: Dockerfile
     ports:
       - "8003:8000"
     volumes:
-      - ./concurrency-simulator/app:/app
-    restart: unless-stopped
+      - ./process_scheduler:/app
+    environment:
+      - PYTHONUNBUFFERED=1
 
-networks:
-  virtual-labs-network:
-    external: true
+  multithreading-service:
+    build:
+      context: ./multithreading_service
+      dockerfile: Dockerfile
+    ports:
+      - "8004:8000"
+    volumes:
+      - ./multithreading_service:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  filesystem-service:
+    build:
+      context: ./filesystem
+      dockerfile: Dockerfile
+    ports:
+      - "8005:8000"
+    volumes:
+      - ./filesystem:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  deadlock-simulator-service:
+    build:
+      context: ./deadlock-simulator
+      dockerfile: Dockerfile
+    ports:
+      - "8006:8000"
+    volumes:
+      - ./deadlock-simulator:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  concurrency-simulator-service:
+    build:
+      context: ./concurrency-simulator
+      dockerfile: Dockerfile
+    ports:
+      - "8007:8000"
+    volumes:
+      - ./concurrency-simulator:/app
+    environment:
+      - PYTHONUNBUFFERED=1 
