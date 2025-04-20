@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Process Scheduler</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2rem;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        form, button {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin: 0.5rem 0;
+        }
+        input {
+            padding: 0.3rem;
+            margin-left: 0.5rem;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 0.6rem;
+            text-align: center;
+        }
+        th {
+            background-color: #ecf0f1;
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            margin-right: 0.5rem;
+            cursor: pointer;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        .message {
+            padding: 0.5rem;
+            margin-top: 1rem;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+        .loader {
+            display: none;
+            margin-top: 1rem;
+        }
+    </style>
+    <script defer src="script.js"></script>
+</head>
+<body>
+    <h1>Process Scheduling Microservice</h1>
+
+    <h2>Add Process</h2>
+    <form id="processForm">
+        <label>PID: <input type="text" name="pid" required></label>
+        <label>Arrival Time: <input type="number" name="arrival_time" required></label>
+        <label>Burst Time: <input type="number" name="burst_time" required></label>
+        <label>Memory Required (MB): <input type="number" name="memory_required" required></label>
+
+        <button class="btn" type="submit">Add Process</button>
+    </form>
+    <div id="message" class="message"></div>
+
+    <h2>Simulate Scheduling</h2>
+<label>
+    Algorithm:
+    <select id="algorithmSelect">
+        <option value="fcfs">FCFS</option>
+        <option value="sjf">SJF</option>
+        <option value="round_robin">Round Robin</option>
+    </select>
+</label>
+<label id="quantumInput" style="display:none;">
+    Quantum:
+    <input type="number" id="quantum" value="2" min="1">
+</label>
+<br>
+<button class="btn" onclick="simulate()">Simulate</button>
+<button class="btn" onclick="clearAll()">Clear All</button>
+
+
+    <h2>Current Processes</h2>
+    <table id="processTable">
+        <thead>
+            <tr>
+                <th>PID</th>
+                <th>Arrival Time</th>
+                <th>Burst Time</th>
+                <th>Memory Required (MB)</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <div class="loader" id="loader">Simulating...</div>
+
+    <h2>Simulation Result</h2>
+    <pre id="simulationResult"></pre>
+</body>
+</html>

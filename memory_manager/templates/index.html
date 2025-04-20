@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Memory Allocation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        h1, h2 {
+            color: #2c3e50;
+        }
+
+        form {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 400px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        form label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+
+        form input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        form button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        form button:hover {
+            background: #2980b9;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        table th, table td {
+            padding: 12px 15px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        table thead {
+            background: #2c3e50;
+            color: white;
+        }
+
+        table tr:hover {
+            background: #f1f1f1;
+        }
+
+        .deallocate-btn {
+            background: #e74c3c;
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .deallocate-btn:hover {
+            background: #c0392b;
+        }
+
+        .status-bar {
+            background: #ffffff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .status-item {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .status-item span {
+            font-weight: normal;
+            color: #3498db;
+        }
+    </style>
+</head>
+<body>
+    <h1>Process Memory Allocation</h1>
+
+    <!-- Memory Status Display -->
+    <div class="status-bar">
+        <div class="status-item">
+            Total Memory: <span id="totalMemory">Loading...</span> MB
+        </div>
+        <div class="status-item">
+            Used Memory: <span id="usedMemory">Loading...</span> MB
+        </div>
+        <div class="status-item">
+            Free Memory: <span id="freeMemory">Loading...</span> MB
+        </div>
+    </div>
+
+    <form id="allocationForm">
+        <label for="process_id">Process ID:</label>
+        <input type="text" id="process_id" name="process_id" required>
+
+        <label for="memory">Memory (MB):</label>
+        <input type="number" id="memory" name="memory" required>
+
+        <button type="submit">Allocate</button>
+    </form>
+
+    <h2>Current Allocations</h2>
+    <table id="allocationTable">
+        <thead>
+            <tr>
+                <th>Process ID</th>
+                <th>Memory</th>
+                <th>Pages</th>
+                <th>Swapped</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Filled dynamically -->
+        </tbody>
+    </table>
+
+    <script>
+        async function fetchStatusAndRender() {
+            const res = await fetch("/status");
+            const data = await res.json();
+            const tbody = document.querySelector("#allocationTable tbody");
+            tbody.innerHTML = "";
+            data.allocations.forEach(alloc => {
+                const row = `<tr>
+                    <td>${alloc.process_id}</td>
+                    <td>${alloc.memory}MB</td>
+                    <td>${alloc.pages}</td>
+                    <td>${alloc.swapped ? "Yes" : "No"}</td>
+                    <td>
+                        <button class="deallocate-btn" onclick="deallocate('${alloc.process_id}')">Deallocate</button>
+                    </td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+
+            // Update memory status
+            document.getElementById("totalMemory").textContent = data.total_memory;
+            document.getElementById("usedMemory").textContent = data.used_memory;
+            document.getElementById("freeMemory").textContent = data.free_memory;
+        }
+
+        async function deallocate(process_id) {
+            if (!confirm(`Are you sure you want to deallocate memory from process ${process_id}?`)) return;
+
+            const res = await fetch("/deallocate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ process_id })
+            });
+
+            const data = await res.json();
+            alert(data.message || data.error);
+            await fetchStatusAndRender();
+        }
+
+        async function checkSharedMemoryAndAllocate() {
+            try {
+                const res = await fetch("http://localhost:8000/simulate/shared_memory/read");
+
+                const data = await res.json();
+                if (data.status === "success" && data.message.includes("PID=")) {
+                    const match = data.message.match(/PID=(\d+),Memory=(\d+)MB/);
+                    if (match) {
+                        const process_id = match[1];
+                        const memory = parseInt(match[2]);
+
+                        const response = await fetch("/allocate", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ process_id, memory })
+                        });
+
+                        const result = await response.json();
+                        console.log(result.message || result.error);
+                        await fetchStatusAndRender();
+                    }
+                }
+            } catch (err) {
+                console.warn("Shared memory check failed:", err);
+            }
+        }
+
+        document.getElementById("allocationForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const process_id = document.getElementById("process_id").value;
+            const memory = parseInt(document.getElementById("memory").value);
+
+            const res = await fetch("/allocate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ process_id, memory })
+            });
+
+            const data = await res.json();
+            alert(data.message || data.error);
+            await fetchStatusAndRender();
+        });
+
+        window.onload = async () => {
+            await checkSharedMemoryAndAllocate();
+            await fetchStatusAndRender();
+        };
+    </script>
+</body>
+</html>

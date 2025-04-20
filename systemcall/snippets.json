@@ -1,0 +1,220 @@
+{
+    "execution_instructions": {
+      "compilation": "gcc -o program program.c",
+      "execution": "./program",
+      "examples": {
+        "fork": {
+          "compilation": "gcc -o fork_example fork_example.c",
+          "execution": "./fork_example",
+          "output_example": "Parent process. Child PID: 1234\nChild process. PID: 1234"
+        },
+        "open": {
+          "compilation": "gcc -o open_example open_example.c",
+          "execution": "./open_example",
+          "output_example": "File opened successfully. FD: 3"
+        },
+        "pipe": {
+          "compilation": "gcc -o pipe_example pipe_example.c",
+          "execution": "./pipe_example",
+          "output_example": "Received: Hello from child!"
+        },
+        "socket": {
+          "compilation": "gcc -o socket_example socket_example.c",
+          "execution": "./socket_example",
+          "output_example": "Connected to 127.0.0.1:8080"
+        },
+        "mmap": {
+          "compilation": "gcc -o mmap_example mmap_example.c",
+          "execution": "./mmap_example",
+          "output_example": "File mapped successfully"
+        }
+      }
+    },
+    "fork": {
+      "default": {
+        "code": "#include <stdio.h>\n#include <unistd.h>\n\nint main() {\n    pid_t pid = fork();\n    if (pid < 0) {\n        perror(\"fork failed\");\n        return 1;\n    } else if (pid == 0) {\n        printf(\"Child process. PID: %d\\n\", getpid());\n    } else {\n        printf(\"Parent process. Child PID: %d\\n\", pid);\n    }\n    return 0;\n}",
+        "explanation": "The fork() system call creates a new process by duplicating the calling process.",
+        "potential_output": "Parent process. Child PID: 1234\nChild process. PID: 1234",
+        "required_arguments": [],
+        "argument_types": []
+      },
+      "error_handling": {
+        "code": "#include <stdio.h>\n#include <unistd.h>\n#include <stdlib.h>\n\nint main() {\n    pid_t pid = fork();\n    if (pid < 0) {\n        fprintf(stderr, \"Fork failed: %s\\n\", strerror(errno));\n        exit(EXIT_FAILURE);\n    } else if (pid == 0) {\n        printf(\"Child process. PID: %d\\n\", getpid());\n        exit(EXIT_SUCCESS);\n    } else {\n        printf(\"Parent process. Child PID: %d\\n\", pid);\n        wait(NULL);\n    }\n    return 0;\n}",
+        "explanation": "Enhanced fork() with proper error handling and process cleanup.",
+        "potential_output": "Parent process. Child PID: 1234\nChild process. PID: 1234",
+        "required_arguments": [],
+        "argument_types": []
+      }
+    },
+    "open": {
+      "default": {
+        "code": "#include <fcntl.h>\n#include <stdio.h>\n#include <unistd.h>\n\nint main() {\n    int fd = open(%1, %2);\n    if (fd == -1) {\n        perror(\"open failed\");\n        return 1;\n    }\n    printf(\"File opened successfully. FD: %d\\n\", fd);\n    close(fd);\n    return 0;\n}",
+        "explanation": "open() opens a file with specified flags.",
+        "potential_output": "File opened successfully. FD: 3",
+        "required_arguments": ["filename", "flags"],
+        "argument_types": ["string", "string"],
+        "default_arguments": ["\"example.txt\"", "O_RDONLY"]
+      }
+    },
+    "read": {
+      "default": {
+        "code": "#include <fcntl.h>\n#include <unistd.h>\n#include <stdio.h>\n\nint main() {\n    char buffer[%1];\n    int fd = open(%2, O_RDONLY);\n    if (fd == -1) {\n        perror(\"open failed\");\n        return 1;\n    }\n    int bytes = read(fd, buffer, sizeof(buffer) - 1);\n    if (bytes == -1) {\n        perror(\"read failed\");\n        return 1;\n    }\n    buffer[bytes] = '\\0';\n    printf(\"Read %d bytes: %s\\n\", bytes, buffer);\n    close(fd);\n    return 0;\n}",
+        "explanation": "read() reads content from a file into a buffer and prints it.",
+        "potential_output": "Read 20 bytes: Hello from file...",
+        "required_arguments": ["buffer_size", "filename"],
+        "argument_types": ["int", "string"],
+        "default_arguments": ["100", "\"example.txt\""]
+      }
+    },
+    "wait": {
+      "default": {
+        "code": "#include <sys/types.h>\n#include <sys/wait.h>\n#include <unistd.h>\n#include <stdio.h>\n\nint main() {\n    pid_t pid = fork();\n    if (pid == 0) {\n        printf(\"Child: Doing work...\\n\");\n        return %1;\n    } else {\n        int status;\n        wait(&status);\n        if (WIFEXITED(status)) {\n            printf(\"Parent: Child exited with code %d\\n\", WEXITSTATUS(status));\n        }\n    }\n    return 0;\n}",
+        "explanation": "wait() pauses the parent until the child exits, and retrieves the exit code.",
+        "potential_output": "Child: Doing work...\nParent: Child exited with code 42",
+        "required_arguments": ["exit_code"],
+        "argument_types": ["int"],
+        "default_arguments": ["42"]
+      }
+    },
+    "socket": {
+      "default": {
+        "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <sys/socket.h>\n#include <netinet/in.h>\n#include <arpa/inet.h>\n\nint main() {\n    int sockfd = socket(AF_INET, SOCK_STREAM, 0);\n    if (sockfd < 0) {\n        perror(\"socket creation failed\");\n        return 1;\n    }\n    \n    struct sockaddr_in servaddr;\n    memset(&servaddr, 0, sizeof(servaddr));\n    servaddr.sin_family = AF_INET;\n    servaddr.sin_port = htons(%1);\n    servaddr.sin_addr.s_addr = inet_addr(%2);\n    \n    if (connect(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0) {\n        perror(\"connection failed\");\n        return 1;\n    }\n    \n    printf(\"Connected to %s:%d\\n\", %2, %1);\n    close(sockfd);\n    return 0;\n}",
+        "explanation": "Creates a TCP socket and connects to a server.",
+        "potential_output": "Connected to 127.0.0.1:8080",
+        "required_arguments": ["port", "ip_address"],
+        "argument_types": ["int", "string"],
+        "default_arguments": ["8080", "\"127.0.0.1\""]
+      }
+    },
+    "bind": {
+      "default": {
+        "code": "#include <sys/socket.h>\n#include <netinet/in.h>\n#include <stdio.h>\n#include <unistd.h>\n\nint main() {\n    int sockfd = socket(AF_INET, SOCK_STREAM, 0);\n    struct sockaddr_in addr;\n    addr.sin_family = AF_INET;\n    addr.sin_port = htons(%d);\n    addr.sin_addr.s_addr = INADDR_ANY;\n    \n    if (bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {\n        perror(\"bind failed\");\n        return 1;\n    }\n    printf(\"Bind successful on port %d\\n\", %d);\n    close(sockfd);\n    return 0;\n}",
+        "explanation": "bind() assigns a name to a socket.",
+        "potential_output": "Bind successful on port 8080",
+        "required_arguments": ["port"],
+        "argument_types": ["int"],
+        "default_arguments": ["8080"]
+      }
+    },
+    "listen": {
+      "default": {
+        "code": "#include <sys/socket.h>\n#include <netinet/in.h>\n#include <stdio.h>\n#include <unistd.h>\n\nint main() {\n    int sockfd = socket(AF_INET, SOCK_STREAM, 0);\n    struct sockaddr_in addr;\n    addr.sin_family = AF_INET;\n    addr.sin_port = htons(8080);\n    addr.sin_addr.s_addr = INADDR_ANY;\n    \n    bind(sockfd, (struct sockaddr*)&addr, sizeof(addr));\n    \n    if (listen(sockfd, %d) < 0) {\n        perror(\"listen failed\");\n        return 1;\n    }\n    printf(\"Listening on port 8080 with backlog %d\\n\", %d);\n    close(sockfd);\n    return 0;\n}",
+        "explanation": "listen() marks a socket as accepting connections.",
+        "potential_output": "Listening on port 8080 with backlog 5",
+        "required_arguments": ["backlog"],
+        "argument_types": ["int"],
+        "default_arguments": ["5"]
+      }
+    },
+    "accept": {
+      "default": {
+        "code": "#include <sys/socket.h>\n#include <netinet/in.h>\n#include <stdio.h>\n#include <unistd.h>\n\nint main() {\n    int sockfd = socket(AF_INET, SOCK_STREAM, 0);\n    struct sockaddr_in addr;\n    addr.sin_family = AF_INET;\n    addr.sin_port = htons(8080);\n    addr.sin_addr.s_addr = INADDR_ANY;\n    \n    bind(sockfd, (struct sockaddr*)&addr, sizeof(addr));\n    listen(sockfd, 5);\n    \n    struct sockaddr_in client_addr;\n    socklen_t client_len = sizeof(client_addr);\n    int client_fd = accept(sockfd, (struct sockaddr*)&client_addr, &client_len);\n    \n    if (client_fd < 0) {\n        perror(\"accept failed\");\n        return 1;\n    }\n    printf(\"Accepted connection from client\\n\");\n    close(client_fd);\n    close(sockfd);\n    return 0;\n}",
+        "explanation": "accept() accepts a connection on a socket.",
+        "potential_output": "Accepted connection from client",
+        "required_arguments": [],
+        "argument_types": [],
+        "default_arguments": []
+      }
+    },
+    "shmget": {
+      "default": {
+        "code": "#include <sys/ipc.h>\n#include <sys/shm.h>\n#include <stdio.h>\n\nint main() {\n    key_t key = ftok(\"%s\", %d);\n    int shmid = shmget(key, %d, IPC_CREAT | 0666);\n    if (shmid < 0) {\n        perror(\"shmget failed\");\n        return 1;\n    }\n    printf(\"Shared memory segment created. ID: %d\\n\", shmid);\n    return 0;\n}",
+        "explanation": "shmget() allocates a shared memory segment.",
+        "potential_output": "Shared memory segment created. ID: 1234",
+        "required_arguments": ["pathname", "proj_id", "size"],
+        "argument_types": ["string", "int", "int"],
+        "default_arguments": ["\"/tmp/shared_mem\"", "65", "1024"]
+      }
+    },
+    "shmat": {
+      "default": {
+        "code": "#include <sys/ipc.h>\n#include <sys/shm.h>\n#include <stdio.h>\n\nint main() {\n    key_t key = ftok(\"/tmp/shared_mem\", 65);\n    int shmid = shmget(key, 1024, IPC_CREAT | 0666);\n    \n    char *shm = shmat(shmid, NULL, 0);\n    if (shm == (char*)-1) {\n        perror(\"shmat failed\");\n        return 1;\n    }\n    printf(\"Shared memory attached at address: %p\\n\", shm);\n    shmdt(shm);\n    return 0;\n}",
+        "explanation": "shmat() attaches a shared memory segment.",
+        "potential_output": "Shared memory attached at address: 0x7f1234567890",
+        "required_arguments": [],
+        "argument_types": [],
+        "default_arguments": []
+      }
+    },
+    "semget": {
+      "default": {
+        "code": "#include <sys/ipc.h>\n#include <sys/sem.h>\n#include <stdio.h>\n\nint main() {\n    key_t key = ftok(\"%s\", %d);\n    int semid = semget(key, %d, IPC_CREAT | 0666);\n    if (semid < 0) {\n        perror(\"semget failed\");\n        return 1;\n    }\n    printf(\"Semaphore set created. ID: %d\\n\", semid);\n    return 0;\n}",
+        "explanation": "semget() creates a new semaphore set or obtains an existing one.",
+        "potential_output": "Semaphore set created. ID: 1234",
+        "required_arguments": ["pathname", "proj_id", "nsems"],
+        "argument_types": ["string", "int", "int"],
+        "default_arguments": ["\"/tmp/semaphore\"", "66", "1"]
+      }
+    },
+    "msgget": {
+      "default": {
+        "code": "#include <sys/ipc.h>\n#include <sys/msg.h>\n#include <stdio.h>\n\nint main() {\n    key_t key = ftok(\"%s\", %d);\n    int msgid = msgget(key, IPC_CREAT | 0666);\n    if (msgid < 0) {\n        perror(\"msgget failed\");\n        return 1;\n    }\n    printf(\"Message queue created. ID: %d\\n\", msgid);\n    return 0;\n}",
+        "explanation": "msgget() creates a new message queue or obtains an existing one.",
+        "potential_output": "Message queue created. ID: 1234",
+        "required_arguments": ["pathname", "proj_id"],
+        "argument_types": ["string", "int"],
+        "default_arguments": ["\"/tmp/message_queue\"", "67"]
+      }
+    },
+    "pipe": {
+      "default": {
+        "code": "#include <stdio.h>\n#include <unistd.h>\n#include <string.h>\n\nint main() {\n    int pipefd[2];\n    char buffer[%1];\n    \n    if (pipe(pipefd) == -1) {\n        perror(\"pipe\");\n        return 1;\n    }\n    \n    pid_t pid = fork();\n    if (pid == 0) {\n        close(pipefd[0]);\n        write(pipefd[1], %2, strlen(%2));\n        close(pipefd[1]);\n        exit(0);\n    } else {\n        close(pipefd[1]);\n        read(pipefd[0], buffer, sizeof(buffer));\n        printf(\"Received: %s\\n\", buffer);\n        close(pipefd[0]);\n    }\n    return 0;\n}",
+        "explanation": "Creates a pipe for inter-process communication between parent and child.",
+        "potential_output": "Received: Hello from child!",
+        "required_arguments": ["buffer_size", "message"],
+        "argument_types": ["int", "string"],
+        "default_arguments": ["100", "\"Hello from child!\""]
+      }
+    },
+    "mmap": {
+      "default": {
+        "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <sys/mman.h>\n#include <fcntl.h>\n#include <unistd.h>\n\nint main() {\n    int fd = open(%1, O_RDWR | O_CREAT, 0666);\n    if (fd == -1) {\n        perror(\"open\");\n        return 1;\n    }\n    \n    void *addr = mmap(NULL, %2, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);\n    if (addr == MAP_FAILED) {\n        perror(\"mmap\");\n        return 1;\n    }\n    \n    sprintf((char*)addr, %3);\n    \n    munmap(addr, %2);\n    close(fd);\n    return 0;\n}",
+        "explanation": "Memory maps a file for efficient reading and writing.",
+        "potential_output": "File mapped successfully",
+        "required_arguments": ["filename", "size", "content"],
+        "argument_types": ["string", "int", "string"],
+        "default_arguments": ["\"mapped_file.txt\"", "4096", "\"Hello from mmap!\""]
+      }
+    },
+    "execvp": {
+      "default": {
+        "code": "#include <unistd.h>\n#include <stdio.h>\n\nint main() {\n    char *args[] = {%1, %2, NULL};\n    printf(\"About to execute command: %s %s\\n\", args[0], args[1]);\n    \n    if (execvp(args[0], args) == -1) {\n        perror(\"execvp failed\");\n        return 1;\n    }\n    \n    // This line will never be reached if execvp succeeds\n    printf(\"This line should never be printed\\n\");\n    return 0;\n}",
+        "explanation": "execvp() replaces the current process with a new program, using an array of arguments and searching the PATH environment variable.",
+        "potential_output": "About to execute command: ls -l",
+        "required_arguments": ["command", "arg1"],
+        "argument_types": ["string", "string"],
+        "default_arguments": ["\"ls\"", "\"-l\""]
+      }
+    },
+    "execl": {
+      "default": {
+        "code": "#include <unistd.h>\n#include <stdio.h>\n\nint main() {\n    printf(\"About to execute command: %s %s\\n\", \"%s\", \"%s\");\n    \n    if (execl(\"%s\", \"%s\", \"%s\", NULL) == -1) {\n        perror(\"execl failed\");\n        return 1;\n    }\n    \n    // This line will never be reached if execl succeeds\n    printf(\"This line should never be printed\\n\");\n    return 0;\n}",
+        "explanation": "execl() replaces the current process with a new program, using a list of arguments.",
+        "potential_output": "About to execute command: echo Hello",
+        "required_arguments": ["path", "arg0", "arg1"],
+        "argument_types": ["string", "string", "string"],
+        "default_arguments": ["\"/bin/echo\"", "\"echo\"", "\"Hello\""]
+      }
+    },
+    "execve": {
+      "default": {
+        "code": "#include <unistd.h>\n#include <stdio.h>\n\nint main() {\n    char *args[] = {\"%s\", \"%s\", NULL};\n    char *env[] = {\"PATH=/usr/bin:/bin\", \"TERM=xterm\", NULL};\n    \n    printf(\"About to execute command with custom environment: %s %s\\n\", args[0], args[1]);\n    \n    if (execve(args[0], args, env) == -1) {\n        perror(\"execve failed\");\n        return 1;\n    }\n    \n    // This line will never be reached if execve succeeds\n    printf(\"This line should never be printed\\n\");\n    return 0;\n}",
+        "explanation": "execve() replaces the current process with a new program, using an array of arguments and a custom environment.",
+        "potential_output": "About to execute command with custom environment: env printenv",
+        "required_arguments": ["path", "arg1"],
+        "argument_types": ["string", "string"],
+        "default_arguments": ["\"/usr/bin/env\"", "\"printenv\""]
+      }
+    },
+    "select": {
+      "default": {
+        "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <sys/select.h>\n#include <sys/time.h>\n#include <unistd.h>\n\nint main() {\n    fd_set readfds;\n    struct timeval timeout;\n    \n    FD_ZERO(&readfds);\n    FD_SET(%1, &readfds);\n    \n    timeout.tv_sec = %2;\n    timeout.tv_usec = %3;\n    \n    int retval = select(%1 + 1, &readfds, NULL, NULL, &timeout);\n    if (retval == -1) {\n        perror(\"select()\");\n    } else if (retval) {\n        printf(\"Data is available now.\\n\");\n    } else {\n        printf(\"No data within %d seconds.\\n\", %2);\n    }\n    return 0;\n}",
+        "explanation": "Monitors file descriptors for readiness using select().",
+        "potential_output": "No data within 5 seconds.",
+        "required_arguments": ["fd", "seconds", "microseconds"],
+        "argument_types": ["int", "int", "int"],
+        "default_arguments": ["0", "5", "0"]
+      }
+    }
+  }
+  
