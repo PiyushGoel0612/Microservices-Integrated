@@ -2,10 +2,9 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Copy everything from your project directory into the Docker image
-COPY . .
-
-# Install Python dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python", "app.py"]
+COPY . .
+
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
