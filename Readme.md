@@ -1,123 +1,134 @@
-# OS Simulation APIs
+# CC-VirtualLabs Integrated Microservices
 
-This repository contains a collection of FastAPI-based REST APIs that simulate various operating system concepts. These simulations are designed for educational purposes to help students understand fundamental OS concepts through practical examples.
+This repository contains an integrated collection of microservices for Computer Science education, specifically focused on Operating System concepts. Each microservice is containerized using Docker and can be run independently or as part of the complete system.
 
-## Table of Contents
+## Services Overview
 
-- [Concurrency Simulator](#concurrency-simulator)
-  - [Producer-Consumer Problem](#producer-consumer-problem)
-  - [Dining Philosophers Problem](#dining-philosophers-problem)
-- [Deadlock Simulator](#deadlock-simulator)
-- [File System Simulator](#file-system-simulator)
-- [API Documentation](#api-documentation)
+The system consists of 8 microservices, each focusing on different aspects of Operating Systems:
 
-## Concurrency Simulator
+1. **IPC Service** (Port: 8000)
+   - Inter-Process Communication simulation
+   - Demonstrates various IPC mechanisms
+   - Built on FastAPI with Python
 
-The Concurrency Simulator demonstrates classic concurrency problems in operating systems.
+2. **System Call Service** (Port: 8001)
+   - System call simulation and visualization
+   - Demonstrates OS system call operations
+   - Python-based implementation
 
-### Producer-Consumer Problem
+3. **Memory Manager Service** (Port: 8002)
+   - Memory management simulation
+   - Includes paging, segmentation, and memory allocation
+   - Python implementation
 
-Simulates a shared buffer with multiple producers and consumers, demonstrating synchronization mechanisms to handle resource sharing.
+4. **Process Scheduler Service** (Port: 8003)
+   - Process scheduling algorithms simulation
+   - Includes FCFS, Round Robin, Priority Scheduling
+   - Python-based implementation
 
-**Features:**
-- Configurable buffer size
-- Adjustable producer and consumer speeds
-- Real-time monitoring of buffer states
-- Pause/resume functionality to observe the system at different stages
+5. **Multithreading Service** (Port: 8004)
+   - Thread management and synchronization
+   - Demonstrates thread creation, management, and synchronization
+   - FastAPI implementation
 
-### Dining Philosophers Problem
+6. **File System Service** (Port: 8005)
+   - File system operations simulation
+   - Demonstrates file operations and management
+   - Python implementation
 
-Simulates the classic synchronization problem where multiple philosophers alternate between thinking and eating, but must acquire shared forks to eat.
+7. **Deadlock Simulator Service** (Port: 8006)
+   - Deadlock detection and prevention
+   - Resource allocation graph visualization
+   - Python-based implementation
 
-**Features:**
-- Configurable number of philosophers
-- Adjustable thinking and eating times
-- Deadlock prevention with asymmetric resource acquisition
-- Real-time status monitoring of each philosopher
+8. **Concurrency Simulator Service** (Port: 8007)
+   - Concurrent process execution simulation
+   - Race condition demonstration
+   - FastAPI implementation
 
-## Deadlock Simulator
+## Prerequisites
 
-A comprehensive simulator for demonstrating resource allocation and deadlock scenarios in operating systems.
+- Docker
+- Docker Compose
+- Git
 
-**Features:**
-- Create processes and resources
-- Request and release resources
-- Deadlock detection using wait-for graph method
-- Visualization of system state and resource allocation
-- Real-time tracking of blocked processes
+## 
 
-## File System Simulator
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/yourusername/CC-VirtualLabs-integrate.git
+   cd CC-VirtualLabs-integrate
+   ```
 
-Simulates a hierarchical file system with concurrent access control mechanisms.
+2. **Start All Services**
+   ```bash
+   docker-compose up --build
+   ```
+   This will build and start all services in detached mode.
 
-**Features:**
-- Create, read, write, and delete files
-- Create and list directories
-- File locking mechanism for concurrent access control
-- Track file metadata (creation time, modification time, size)
-- Hierarchical directory structure
+3. **Access Services**
+   Each service is accessible on its respective port:
+   - IPC Service: http://localhost:8000
+   - System Call Service: http://localhost:8001
+   - Memory Manager Service: http://localhost:8002
+   - Process Scheduler Service: http://localhost:8003
+   - Multithreading Service: http://localhost:8004
+   - File System Service: http://localhost:8005
+   - Deadlock Simulator Service: http://localhost:8006
+   - Concurrency Simulator Service: http://localhost:8007
+
+## 🛠️ Development
+
+### Running Individual Services
+To run a specific service:
+```bash
+docker-compose up <service-name>
+```
+Example:
+```bash
+docker-compose up ipc-service
+```
+
+### Viewing Logs
+```bash
+docker-compose logs -f <service-name>
+```
+
+### Stopping Services
+```bash
+docker-compose down
+```
+
+## Service Architecture
+
+Each service follows a similar architecture:
+- FastAPI-based REST API
+- Docker containerization
+- Volume mounting for live code updates
+- Environment configuration for logging
+
+## Configuration
+
+The services are configured through the `docker-compose.yml` file. Key configurations include:
+- Port mappings
+- Volume mounts
+- Environment variables
+- Build contexts
 
 ## API Documentation
 
-Once the servers are running, you can access the auto-generated Swagger UI documentation at:
+Each service provides its own API documentation at:
+```
+http://localhost:<port>/docs
+```
 
-- Concurrency Simulator: http://localhost:8000/docs
-- Deadlock Simulator: http://localhost:8001/docs  
-- File System Simulator: http://localhost:8002/docs
 
-### Concurrency Simulator Endpoints
+## 📝 License
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/simulations/` | POST | Create a new simulation (Producer-Consumer or Dining Philosophers) |
-| `/simulations/` | GET | List all running simulations |
-| `/simulations/{sim_id}/start` | POST | Start a simulation |
-| `/simulations/{sim_id}/pause` | POST | Pause a running simulation |
-| `/simulations/{sim_id}/resume` | POST | Resume a paused simulation |
-| `/simulations/{sim_id}/stop` | POST | Stop a simulation |
-| `/simulations/{sim_id}/status` | GET | Get the current status of a simulation |
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-### Deadlock Simulator Endpoints
+##  Acknowledgments
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/processes/` | POST | Create a new process |
-| `/processes/` | GET | List all processes |
-| `/processes/{process_id}` | GET | Get details of a specific process |
-| `/resources/` | POST | Create a new resource |
-| `/resources/` | GET | List all resources |
-| `/resources/{resource_id}` | GET | Get details of a specific resource |
-| `/processes/{process_id}/request` | POST | Request resource allocation |
-| `/processes/{process_id}/release` | POST | Release allocated resources |
-| `/detect` | GET | Run deadlock detection |
-| `/status` | GET | Get the current system state |
-| `/reset` | POST | Reset the simulator |
-
-### File System Simulator Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/files/` | POST | Create a new file |
-| `/files/{file_id}` | GET | Read a file |
-| `/files/{file_id}` | PUT | Write to a file |
-| `/files/{file_id}` | DELETE | Delete a file |
-| `/files/{file_id}/lock` | POST | Lock a file |
-| `/files/{file_id}/unlock` | POST | Unlock a file |
-| `/directories/` | POST | Create a new directory |
-| `/directories/{dir_path}` | GET | List directory contents |
-
-## Use Cases
-
-These simulators can be used to:
-
-1. **Educational Purposes:**
-   - Demonstrate OS concepts in operating systems courses
-   - Allow students to interact with and observe complex OS mechanisms
-
-2. **Algorithm Analysis:**
-   - Compare different resource allocation strategies
-   - Study deadlock prevention and detection techniques
-
-3. **Debugging Practice:**
-   - Introduce concurrency bugs and challenge students to fix them
-   - Simulate race conditions and synchronization issues
+- FastAPI for the web framework
+- Docker for containerization
+- All contributors and maintainers
