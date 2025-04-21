@@ -20,6 +20,22 @@ def send_analytics_event(user_id: str, lab_type: str, event_type: str, event_dat
     except requests.RequestException as e:
         print(f"[Analytics] Failed to send event: {e}")
 
+def send_lab_completion(user_id: str, lab_type: str, completion_time: int, success, errors, resources_used: dict):
+    url = "http://performance-reporting:8000/performance/record"
+    payload = {
+        "user_id": user_id,
+        "lab_type": lab_type,
+        "completion_time": completion_time,
+        "success": success,
+        "errors": errors,
+        "resources_used": resources_used
+    }
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+    except requests.RequestException as e:
+        print(f"[Analytics] Failed to report event: {e}")
+
 app = FastAPI()
 
 class Resource:
@@ -440,7 +456,18 @@ def release_resource(process_id: str, req: ResourceReleaseRequest):
 # Deadlock detection endpoints
 @app.get("/detect")
 def detect_deadlock():
-    return simulator.detect_deadlock()
+    result = simulator.detect_deadlock()
+
+    send_lab_completion(
+        user_id=USER,
+        lab_type="deadlock-sim",
+        completion_time=len(simulator.processes) + len(simulator.resources),
+        success=result['deadlock_detected'],
+        errors=[],
+        resources_used={i['name']:1 for i in result['deadlocked_processes']}
+    )
+
+    return result
 
 # System state endpoints
 @app.get("/status")
