@@ -74,6 +74,7 @@ class ProducerConsumerSimulation(BaseSimulation):
         self.threads = [threading.Thread(target=self.producer), threading.Thread(target=self.consumer)]
         for t in self.threads:
             t.start()
+
 class DiningPhilosophersSimulation(BaseSimulation):
     def __init__(self, num_philosophers: int = 5, thinking_time: float = 1.0, eating_time: float = 1.0):
         super().__init__(SimulationType.DINING_PHILOSOPHERS)
@@ -83,13 +84,44 @@ class DiningPhilosophersSimulation(BaseSimulation):
         self.forks = [threading.Lock() for _ in range(num_philosophers)]
         self.states = ["Thinking"] * num_philosophers
         self.state_lock = threading.Lock()
+        self._running_flag = threading.Event()
+        self._running_flag.set()
+        self._pause_flag = threading.Event()
+        self._pause_flag.set()  # Not paused initially
     
     def _initialize_threads(self):
         self.threads = [
             threading.Thread(target=self.philosopher_task, args=(i,))
             for i in range(self.num_philosophers)
         ]
-
+    
+    def should_continue(self):
+        return self.status in [SimulationStatus.RUNNING, SimulationStatus.PAUSED]
+    
+    def wait_if_paused(self):
+        if self.status == SimulationStatus.PAUSED:
+            self._pause_flag.wait()  # Wait until unpaused
+    
+    def start(self):
+        super().start()
+        self._initialize_threads()
+        self._running_flag.set()
+        self._pause_flag.set()
+        for thread in self.threads:
+            thread.start()
+    
+    def pause(self):
+        super().pause()
+        self._pause_flag.clear()  # Signal threads to pause
+    
+    def resume(self):
+        super().resume()
+        self._pause_flag.set()  # Signal threads to resume
+    
+    def stop(self):
+        self._running_flag.clear()  # Signal threads to stop
+        super().stop()
+    
     def philosopher_task(self, philosopher_id: int):
         left_fork = philosopher_id
         right_fork = (philosopher_id + 1) % self.num_philosophers
@@ -119,7 +151,8 @@ class DiningPhilosophersSimulation(BaseSimulation):
             self.wait_if_paused()
             
             # Try to pick up second fork
-            if self.forks[second_fork].acquire(timeout=2):  # Prevent deadlock with timeout
+            acquired = self.forks[second_fork].acquire(timeout=2)  # Prevent deadlock with timeout
+            if acquired:
                 with self.state_lock:
                     self.states[philosopher_id] = "Eating"
                     self.log.append(f"Philosopher {philosopher_id} picked up fork {second_fork} and is eating")
@@ -130,6 +163,10 @@ class DiningPhilosophersSimulation(BaseSimulation):
                 self.forks[second_fork].release()
                 with self.state_lock:
                     self.log.append(f"Philosopher {philosopher_id} put down fork {second_fork}")
+            else:
+                # Handle timeout case
+                with self.state_lock:
+                    self.log.append(f"Philosopher {philosopher_id} couldn't get fork {second_fork}, putting down fork {first_fork}")
             
             self.forks[first_fork].release()
             with self.state_lock:
